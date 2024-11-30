@@ -14,7 +14,7 @@
 import { connect } from 'cloudflare:sockets';
 import { IEnv } from '../typing';
 import { WS_READY_STATE } from './const';
-import { decodeVlessPacket, safeCloseWebSocket } from './utils';
+import { decodeVlessPacket } from './utils';
 
 const DEFAULT_USER_ID = '7fa0c01f-eca2-45de-a885-6078ce26fcbe';
 const DEFAULT_PROXY_IP = 'cdn.anycast.eu.org';
@@ -190,7 +190,7 @@ async function handleTCPOutBound(
 				console.log('retry tcpSocket closed error', error);
 			})
 			.finally(() => {
-				safeCloseWebSocket(webSocket);
+				webSocket.close();
 			});
 		remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, null, log);
 	}
@@ -220,7 +220,7 @@ function makeReadableWebSocketStream(webSocketServer: WebSocket, earlyDataHeader
 			webSocketServer.addEventListener('close', () => {
 				// client send close, need close server
 				// if stream is cancel, skip controller.close
-				safeCloseWebSocket(webSocketServer);
+				webSocketServer.close();
 				if (readableStreamCancel) {
 					return;
 				}
@@ -252,7 +252,7 @@ function makeReadableWebSocketStream(webSocketServer: WebSocket, earlyDataHeader
 			}
 			log(`ReadableStream was canceled, due to ${reason}`);
 			readableStreamCancel = true;
-			safeCloseWebSocket(webSocketServer);
+			webSocketServer.close();
 		},
 	});
 
@@ -293,7 +293,7 @@ async function remoteSocketToWS(
 				},
 				close() {
 					log(`remoteConnection!.readable is close with hasIncomingData is ${hasIncomingData}`);
-					// safeCloseWebSocket(webSocket); // no need server close websocket frist for some case will casue HTTP ERR_CONTENT_LENGTH_MISMATCH issue, client will send close event anyway.
+					// webSocket.close(); // no need server close websocket frist for some case will casue HTTP ERR_CONTENT_LENGTH_MISMATCH issue, client will send close event anyway.
 				},
 				abort(reason) {
 					console.error(`remoteConnection!.readable abort`, reason);
@@ -302,7 +302,7 @@ async function remoteSocketToWS(
 		)
 		.catch((error) => {
 			console.error(`remoteSocketToWS has exception `, error.stack || error);
-			safeCloseWebSocket(webSocket);
+			webSocket.close();
 		});
 
 	// seems is cf connect socket have error,
