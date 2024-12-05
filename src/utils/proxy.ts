@@ -2,7 +2,7 @@ import { connect } from 'cloudflare:sockets';
 import { decodeVlessPacket } from './vless';
 import { WS_READY_STATE } from '../const';
 
-export function setupWebSocketProxy(webSocket: WebSocket, earlyData: string, userID: string, proxyIP: string) {
+export function setupWebSocketProxy(webSocket: WebSocket, earlyData: ArrayBuffer, userID: string, proxyIP: string) {
 	let address = '';
 	let portWithRandomLog = '';
 	const log = (info: string, event?: string) => {
@@ -128,7 +128,7 @@ async function handleTCPOutBound(
 	remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, retry, log);
 }
 
-function makeReadableWebSocketStream(webSocketServer: WebSocket, earlyData: string, log: (info: string) => void) {
+function makeReadableWebSocketStream(webSocketServer: WebSocket, earlyData: ArrayBuffer, log: (info: string) => void) {
 	let readableStreamCancel = false;
 	const stream = new ReadableStream<ArrayBuffer>({
 		start(controller) {
@@ -157,10 +157,7 @@ function makeReadableWebSocketStream(webSocketServer: WebSocket, earlyData: stri
 				controller.error(err);
 			});
 			// for ws 0rtt
-			const { earlyData, error } = base64ToArrayBuffer(earlyData);
-			if (error) {
-				controller.error(error);
-			} else if (earlyData) {
+			if (earlyData) {
 				controller.enqueue(earlyData);
 			}
 		},
@@ -237,21 +234,6 @@ async function remoteSocketToWS(
 	if (hasIncomingData === false && retry) {
 		log(`retry`);
 		retry();
-	}
-}
-
-function base64ToArrayBuffer(base64Str: string) {
-	if (!base64Str) {
-		return { error: null };
-	}
-	try {
-		// go use modified Base64 for URL rfc4648 which js atob not support
-		base64Str = base64Str.replace(/-/g, '+').replace(/_/g, '/');
-		const decode = atob(base64Str);
-		const arryBuffer = Uint8Array.from(decode, (c) => c.charCodeAt(0));
-		return { earlyData: arryBuffer.buffer, error: null };
-	} catch (error) {
-		return { error };
 	}
 }
 

@@ -25,6 +25,21 @@ if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
 }
 
+function base64ToArrayBuffer(base64Str: string) {
+	if (!base64Str) {
+		return { error: null };
+	}
+	try {
+		// go use modified Base64 for URL rfc4648 which js atob not support
+		base64Str = base64Str.replace(/-/g, '+').replace(/_/g, '/');
+		const decode = atob(base64Str);
+		const arryBuffer = Uint8Array.from(decode, (c) => c.charCodeAt(0));
+		return { earlyData: arryBuffer.buffer, error: null };
+	} catch (error) {
+		return { error };
+	}
+}
+
 async function httpRequestHandler(request: Request) {
 	const url = new URL(request.url);
 	switch (url.pathname) {
@@ -45,15 +60,21 @@ async function httpRequestHandler(request: Request) {
 }
 
 async function vlessOverWebSocketHandler(request: Request) {
+	// sec-websocket-protocol 通常用于协商 websocket 通信子协议，vless 使用 sec-websocket-protocol 前置部分数据的传输
+	// https://www.v2fly.org/config/transport/websocket.html#websocketobject
+	const earlyDataHeader = request.headers.get('sec-websocket-protocol') || '';
+
+	const { earlyData, error } = base64ToArrayBuffer(earlyDataHeader);
+	if (error) {
+		return new Response('Sec-WebSocket-Protocol header is not valid', { status: 400 });
+	}
+
 	const webSocketPair = new WebSocketPair();
 	const [client, server] = Object.values(webSocketPair);
 
 	server.accept();
-	// sec-websocket-protocol 通常用于协商 websocket 通信子协议，vless 使用 sec-websocket-protocol 前置部分数据的传输
-	// https://www.v2fly.org/config/transport/websocket.html#websocketobject
-	const earlyData = request.headers.get('sec-websocket-protocol') || '';
 
-	setupWebSocketProxy(server, earlyData, userID, proxyIP);
+	setupWebSocketProxy(server, earlyData as ArrayBuffer, userID, proxyIP);
 
 	return new Response(null, {
 		status: 101,
