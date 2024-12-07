@@ -66,6 +66,7 @@ async function vlessOverWebSocketHandler(request: Request) {
 
 	const { earlyData, error } = base64ToArrayBuffer(earlyDataHeader);
 	if (error) {
+		console.error('early data header parse error', earlyDataHeader, error);
 		return new Response('Sec-WebSocket-Protocol header is not valid', { status: 400 });
 	}
 
