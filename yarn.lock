@@ -79,10 +79,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cloudflare/workers-types@npm:^4.20241112.0":
-  version: 4.20241112.0
-  resolution: "@cloudflare/workers-types@npm:4.20241112.0"
-  checksum: 10c0/acb8a65a3018702f09ad57b3eb4b72f3122766592cc901af3d94b75a3bd77eabe163f1d5ae1720a510d2654feba2db5728f0102f8880d1450ab9349f0b029aad
+"@cloudflare/workers-types@npm:^4.20241112.0, @cloudflare/workers-types@npm:^4.x":
+  version: 4.20241205.0
+  resolution: "@cloudflare/workers-types@npm:4.20241205.0"
+  checksum: 10c0/d7635537cbd6839f8344814adaed4853741170567328742653c6564b9423c3be72fb5406f5e9f34f4d93d9346e24d24004484da8964aaa12f5857d1e1800bb59
   languageName: node
   linkType: hard
 
@@ -617,6 +617,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sentry/cloudflare@npm:^8.43.0":
+  version: 8.43.0
+  resolution: "@sentry/cloudflare@npm:8.43.0"
+  dependencies:
+    "@cloudflare/workers-types": "npm:^4.x"
+    "@sentry/core": "npm:8.43.0"
+  dependenciesMeta:
+    "@cloudflare/workers-types":
+      optional: true
+  checksum: 10c0/ee2b66680cd0efa30245ceffe369c34af441eff2cccc0acc38198f363d0b446e065138d8b2ee570d68c0acbef222d133ec92955ab3f6af0a8891004803e038b1
+  languageName: node
+  linkType: hard
+
+"@sentry/core@npm:8.43.0":
+  version: 8.43.0
+  resolution: "@sentry/core@npm:8.43.0"
+  checksum: 10c0/2ad763a3a89d6f18e062fe45d544d0f35664095db855a4220270cd0b433a07f97c4d3309e06dd9e6b82426b6c6c343942ec88b3b9b7adf831973c232a9dfa600
+  languageName: node
+  linkType: hard
+
 "@types/estree@npm:1.0.5, @types/estree@npm:^1.0.0":
   version: 1.0.5
   resolution: "@types/estree@npm:1.0.5"
@@ -884,6 +904,7 @@ __metadata:
   dependencies:
     "@cloudflare/vitest-pool-workers": "npm:^0.5.29"
     "@cloudflare/workers-types": "npm:^4.20241112.0"
+    "@sentry/cloudflare": "npm:^8.43.0"
     typescript: "npm:^5.0.4"
     vitest: "npm:2.1.5"
     wrangler: "npm:^3.88.0"

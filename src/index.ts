@@ -11,6 +11,7 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { withSentry } from '@sentry/cloudflare';
 import { IEnv } from '../typing';
 import { setupWebSocketProxy } from './utils/proxy';
 
@@ -143,4 +144,11 @@ const exportedHandler: ExportedHandler<IEnv> = {
 	},
 };
 
-export default exportedHandler;
+export default withSentry(
+	(env) => ({
+		dsn: env.SENTRY_DSN,
+		// Set tracesSampleRate to 1.0 to capture 100% of spans for tracing.
+		tracesSampleRate: 1.0,
+	}),
+	exportedHandler
+);
