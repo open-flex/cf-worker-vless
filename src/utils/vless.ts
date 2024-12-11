@@ -8,83 +8,83 @@ import { decodeUuid } from './common';
  * -----------------------------------------------------------------------------------------------------------
  */
 export function decodeVlessPacket(vlessBuffer: ArrayBuffer, uuidValidator?: (uuid: string) => boolean) {
-	// 最小包结构：1（协议） + 16（UUID） + 1（附加信息长度） + 0（附加信息长度为0） + 1（指令） + 2（端口） + 1（地址类型） + 4（IPv4 地址） + 0
-	if (vlessBuffer.byteLength < 26) {
-		return {
-			hasError: true,
-			message: 'invalid data',
-		};
-	}
-	const version = new Uint8Array(vlessBuffer.slice(0, 1))[0];
-	const uuid = decodeUuid(vlessBuffer.slice(1, 17));
-	if (uuidValidator && !uuidValidator(uuid)) {
-		return {
-			hasError: true,
-			message: `invalid user: uuidBuffer: ${new Uint8Array(vlessBuffer.slice(1, 17))}, uuid: ${uuid}`,
-		};
-	}
+  // 最小包结构：1（协议） + 16（UUID） + 1（附加信息长度） + 0（附加信息长度为0） + 1（指令） + 2（端口） + 1（地址类型） + 4（IPv4 地址） + 0
+  if (vlessBuffer.byteLength < 26) {
+    return {
+      hasError: true,
+      message: 'invalid data',
+    };
+  }
+  const version = new Uint8Array(vlessBuffer.slice(0, 1))[0];
+  const uuid = decodeUuid(vlessBuffer.slice(1, 17));
+  if (uuidValidator && !uuidValidator(uuid)) {
+    return {
+      hasError: true,
+      message: `invalid user: uuidBuffer: ${new Uint8Array(vlessBuffer.slice(1, 17))}, uuid: ${uuid}`,
+    };
+  }
 
-	// 附加信息暂时没用
-	const optLength = new Uint8Array(vlessBuffer.slice(17, 18))[0];
+  // 附加信息暂时没用
+  const optLength = new Uint8Array(vlessBuffer.slice(17, 18))[0];
 
-	// 0x01 TCP, 0x02 UDP, 0x03 MUX
-	const command = new Uint8Array(vlessBuffer.slice(18 + optLength, 18 + optLength + 1))[0];
+  // 0x01 TCP, 0x02 UDP, 0x03 MUX
+  const command = new Uint8Array(vlessBuffer.slice(18 + optLength, 18 + optLength + 1))[0];
 
-	const portIndex = 18 + optLength + 1;
-	// port is big-Endian in raw data etc 80 == 0x005d
-	const port = new DataView(vlessBuffer.slice(portIndex, portIndex + 2)).getUint16(0);
+  const portIndex = 18 + optLength + 1;
+  // port is big-Endian in raw data etc 80 == 0x005d
+  const port = new DataView(vlessBuffer.slice(portIndex, portIndex + 2)).getUint16(0);
 
-	const addressTypeIndex = portIndex + 2;
-	// 1 --> ipv4  addressLength =4
-	// 2 --> domain name addressLength=addressBuffer[1]
-	// 3 --> ipv6  addressLength =16
-	const addressType = new Uint8Array(vlessBuffer.slice(addressTypeIndex, addressTypeIndex + 1))[0];
+  const addressTypeIndex = portIndex + 2;
+  // 1 --> ipv4  addressLength =4
+  // 2 --> domain name addressLength=addressBuffer[1]
+  // 3 --> ipv6  addressLength =16
+  const addressType = new Uint8Array(vlessBuffer.slice(addressTypeIndex, addressTypeIndex + 1))[0];
 
-	let addressLength = 0;
-	let addressValueIndex = addressTypeIndex + 1;
-	let addressValue = '';
-	switch (addressType) {
-		case 1:
-			addressLength = 4;
-			addressValue = new Uint8Array(vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)).join('.');
-			break;
-		case 2:
-			addressLength = new Uint8Array(vlessBuffer.slice(addressValueIndex, addressValueIndex + 1))[0];
-			addressValueIndex += 1;
-			addressValue = new TextDecoder().decode(vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength));
-			break;
-		case 3:
-			addressLength = 16;
-			const dataView = new DataView(vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength));
-			// 2001:0db8:85a3:0000:0000:8a2e:0370:7334
-			const ipv6 = [];
-			for (let i = 0; i < 8; i++) {
-				ipv6.push(dataView.getUint16(i * 2).toString(16));
-			}
-			addressValue = ipv6.join(':');
-			break;
-		default:
-			return {
-				hasError: true,
-				message: `invild  addressType is ${addressType}`,
-			};
-	}
-	if (!addressValue) {
-		return {
-			hasError: true,
-			message: `addressValue is empty, addressType is ${addressType}`,
-		};
-	}
+  let addressLength = 0;
+  let addressValueIndex = addressTypeIndex + 1;
+  let addressValue = '';
+  switch (addressType) {
+    case 1:
+      addressLength = 4;
+      addressValue = new Uint8Array(vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)).join('.');
+      break;
+    case 2:
+      addressLength = new Uint8Array(vlessBuffer.slice(addressValueIndex, addressValueIndex + 1))[0];
+      addressValueIndex += 1;
+      addressValue = new TextDecoder().decode(vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength));
+      break;
+    case 3:
+      addressLength = 16;
+      const dataView = new DataView(vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength));
+      // 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+      const ipv6 = [];
+      for (let i = 0; i < 8; i++) {
+        ipv6.push(dataView.getUint16(i * 2).toString(16));
+      }
+      addressValue = ipv6.join(':');
+      break;
+    default:
+      return {
+        hasError: true,
+        message: `invild  addressType is ${addressType}`,
+      };
+  }
+  if (!addressValue) {
+    return {
+      hasError: true,
+      message: `addressValue is empty, addressType is ${addressType}`,
+    };
+  }
 
-	const rawData = vlessBuffer.slice(addressValueIndex + addressLength);
+  const rawData = vlessBuffer.slice(addressValueIndex + addressLength);
 
-	return {
-		hasError: false,
-		version,
-		command,
-		addressType,
-		addressValue,
-		port,
-		rawData,
-	};
+  return {
+    hasError: false,
+    version,
+    command,
+    addressType,
+    addressValue,
+    port,
+    rawData,
+  };
 }
