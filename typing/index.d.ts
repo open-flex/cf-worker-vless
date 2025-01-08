@@ -1,5 +1,4 @@
 export interface IEnv {
-	UUID: string;
-	PROXYIP: string;
-	SENTRY_DSN: string;
+  UUID: string;
+  PROXYIP: string;
 }
